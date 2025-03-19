@@ -25,8 +25,8 @@ class Tag(TimeStampModel):
     def __str__(self):
         return self.name
 
-
-class Post(TimeStampModel):
+# category.post_set.count()
+class Post(TimeStampModel): # post.tag.all
     STATUS_CHOICES = [
         ("active", "Active"),
         ("in_active", "Inactive"),
