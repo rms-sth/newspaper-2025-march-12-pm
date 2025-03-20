@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import ListView, TemplateView
+from django.views.generic import ListView, TemplateView, DetailView
 from datetime import timedelta
 from django.utils import timezone
 
@@ -70,7 +70,7 @@ class PostByCategoryView(ListView):
         query = query.filter(
             published_at__isnull=False,
             status="active",
-            category__id=self.kwargs["category_id"], # path
+            category__id=self.kwargs["category_id"],  # path
         ).order_by("-published_at")
         return query
 
@@ -82,6 +82,7 @@ class PostByTagView(ListView):
     paginate_by = 1
 
     def get_queryset(self):
+        # Post.objects.all()
         query = super().get_queryset()
         query = query.filter(
             published_at__isnull=False,
@@ -89,3 +90,40 @@ class PostByTagView(ListView):
             tag__id=self.kwargs["tag_id"],
         ).order_by("-published_at")
         return query
+
+
+class PostDetailView(DetailView):
+    model = Post
+    template_name = "aznews/detail/detail.html"
+    context_object_name = "post"
+    pk_url_kwarg = "id"
+
+    def get_queryset(self):
+        query = Post.objects.filter(published_at__isnull=False, status="active")
+        return query
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object() # currently viewed post
+        obj.views_count += 1
+        obj.save()
+
+        # 3 => 1, 2 => 2, 1
+        context["previous_post"] = (
+            Post.objects.filter(
+                published_at__isnull=False, status="active", id__lt=obj.id
+            )
+            .order_by("-id")
+            .first()
+        )
+
+        # 4,5,6,7,8, 9, 10 ....
+        context["next_post"] = (
+            Post.objects.filter(
+                published_at__isnull=False, status="active", id__gt=obj.id
+            )
+            .order_by("id")
+            .first()
+        )
+
+        return context
