@@ -28,6 +28,7 @@ class Tag(TimeStampModel):
 
 # category.post_set.count()
 
+
 # post.author.userprofile.image.url
 class Post(TimeStampModel):  # post.tag.all
     STATUS_CHOICES = [
@@ -57,8 +58,10 @@ class UserProfile(TimeStampModel):
     def __str__(self):
         return self.user.username
 
+
 # post.comment_set.count
 # post.comment_set.all
+
 
 class Comment(TimeStampModel):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
@@ -68,6 +71,14 @@ class Comment(TimeStampModel):
 
     def __str__(self):
         return f"{self.email} | {self.comment[:70]}"
+
+
+class Newsletter(TimeStampModel):
+    email = models.EmailField(unique=True)
+
+    def __str__(self):
+        return self.email
+
 
 # comment - post
 # 1 post can have M comments => M

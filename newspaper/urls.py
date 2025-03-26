@@ -9,5 +9,7 @@ urlpatterns = [
     path("post-by-category/<int:category_id>/", views.PostByCategoryView.as_view(), name="post-by-category"),
     path("post-by-tag/<int:tag_id>/", views.PostByTagView.as_view(), name="post-by-tag"),
     path("post-detail/<int:id>/", views.PostDetailView.as_view(), name="post-detail"),
-    path("comment/", views.CommentView.as_view(), name="comment")
+    path("comment/", views.CommentView.as_view(), name="comment"),
+    path("newsletter/", views.NewsletterView.as_view(), name="newsletter"),
+    path("search/", views.PostSearchView.as_view(), name="search")
 ]

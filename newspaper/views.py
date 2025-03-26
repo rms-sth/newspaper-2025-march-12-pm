@@ -5,7 +5,7 @@ from datetime import timedelta
 from django.utils import timezone
 
 from newspaper.models import Post, Category, Tag
-from newspaper.forms import CommentForm
+from newspaper.forms import CommentForm, NewsletterForm
 
 
 class HomeView(ListView):
@@ -106,7 +106,7 @@ class PostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        obj = self.get_object() # currently viewed post
+        obj = self.get_object()  # currently viewed post
         obj.views_count += 1
         obj.save()
 
@@ -144,4 +144,80 @@ class CommentView(View):
             request,
             "aznews/detail/detail.html",
             {"post": post, "form": form},
+        )
+
+
+from django.http import JsonResponse
+
+
+class NewsletterView(View):
+    def post(self, request):
+        is_ajax = request.headers.get("x-requested-with")
+        if is_ajax == "XMLHttpRequest":
+            form = NewsletterForm(request.POST)
+            if form.is_valid():
+                form.save()
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Successfully subscribed to the newsletter.",
+                    },
+                    status=201,
+                )
+            else:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Cannot subscribe to the newsletter.",
+                    },
+                    status=400,
+                )
+        else:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Cannot process. Must be an AJAX XMLHttpRequest",
+                },
+                status=400,
+            )
+
+
+from django.core.paginator import PageNotAnInteger, Paginator
+from django.db.models import Q
+
+
+# | => or
+# & => and
+
+
+class PostSearchView(View):
+    template_name = "aznews/list/list.html"
+
+    def get(self, request, *args, **kwargs):
+        query = request.GET["query"]  # query=ram search => title=ram or content=ram
+        post_list = Post.objects.filter(
+            (
+                Q(title__icontains=query)
+                | Q(content__icontains=query)
+                | Q(tag__name__icontains=query)
+                | Q(category__name__icontains=query)
+            )  
+            & Q(status="active")
+            & Q(published_at__isnull=False)
+        ).order_by("-published_at")
+
+        # pagination start
+        page = request.GET.get("page", 1) 
+        paginate_by = 3
+        paginator = Paginator(post_list, paginate_by)
+        try:
+            posts = paginator.page(page)
+        except PageNotAnInteger:
+            posts = paginator.page(1)
+        # pagination end
+
+        return render(
+            request,
+            self.template_name,
+            {"page_obj": posts, "query": query},
         )
