@@ -3,9 +3,10 @@ from django.views import View
 from django.views.generic import ListView, TemplateView, DetailView
 from datetime import timedelta
 from django.utils import timezone
+from django.contrib import messages
 
 from newspaper.models import Post, Category, Tag
-from newspaper.forms import CommentForm, NewsletterForm
+from newspaper.forms import CommentForm, ContactForm, NewsletterForm
 
 
 class HomeView(ListView):
@@ -36,6 +37,8 @@ class HomeView(ListView):
         context["recent_posts"] = Post.objects.filter(
             published_at__isnull=False, status="active"
         ).order_by("-published_at")[:7]
+
+        context["whats_new_categories"] = Category.objects.all()[:5]
 
         return context
 
@@ -201,13 +204,13 @@ class PostSearchView(View):
                 | Q(content__icontains=query)
                 | Q(tag__name__icontains=query)
                 | Q(category__name__icontains=query)
-            )  
+            )
             & Q(status="active")
             & Q(published_at__isnull=False)
         ).order_by("-published_at")
 
         # pagination start
-        page = request.GET.get("page", 1) 
+        page = request.GET.get("page", 1)
         paginate_by = 3
         paginator = Paginator(post_list, paginate_by)
         try:
@@ -221,3 +224,29 @@ class PostSearchView(View):
             self.template_name,
             {"page_obj": posts, "query": query},
         )
+
+
+class ContactView(View):
+    template_name = "aznews/contact.html"
+
+    def get(self, request):
+        return render(request, self.template_name)
+
+    def post(self, request):
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, "Successfully submitted your query. We will contact you soon."
+            )
+            return redirect("contact")
+        else:
+            messages.error(
+                request,
+                "Cannot submit your query. Please make sure all fields are valid.",
+            )
+            return render(
+                request,
+                self.template_name,
+                {"form": form},
+            )

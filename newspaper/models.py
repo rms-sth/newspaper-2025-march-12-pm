@@ -27,7 +27,7 @@ class Tag(TimeStampModel):
 
 
 # category.post_set.count()
-
+# category.post_set.all()
 
 # post.author.userprofile.image.url
 class Post(TimeStampModel):  # post.tag.all
@@ -78,6 +78,19 @@ class Newsletter(TimeStampModel):
 
     def __str__(self):
         return self.email
+
+
+class Contact(TimeStampModel):
+    message = models.TextField()
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    subject = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ["created_at"]
 
 
 # comment - post
